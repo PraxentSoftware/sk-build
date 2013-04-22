@@ -1,0 +1,27 @@
+{
+  "name": "algebraix",
+  "version": "0.0.0",
+  "description": "Build scripts for Algebraix",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-compass": "~0.3.8",
+    "grunt-contrib-livereload": "~0.1.0rc7",
+    "grunt-regarde": "~0.1.1",
+    "wrench": "~1.4.4",
+    "grunt-contrib-jshint": "~0.1.0",
+    "grunt-ember-templates": "~0.4.2rc8",
+    "grunt-requirejs": "~0.3.5",
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:FilmKnurd/algebraix.git"
+  },
+  "gitHead": "bf9a02c0cc3481d71a34cd258bc70e10764843e5",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "grunt": "~0.4.1"
+  }
+}
