@@ -1,0 +1,82 @@
+##
+# Ansible playbook for setting up drupal STARTERKIT project.
+#
+# Note: all paths relative to the directory of this script.
+#
+# EXAMPLE PATHS:
+# ${project_root}/htdocs/
+# ${project_root}/src/
+##
+
+---
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ../../etc/settings.yml
+
+  vars:
+    project_root: ../..
+
+  tasks:
+    - name: Remove existing symlink
+      action: command rm ${project_root}/htdocs/profiles/${project_name}
+      tags:
+        - clean
+
+    - name: Drop database if exists
+      action: command mysql --user=${mysql_root_user} --password=${mysql_root_password} -h localhost -e "DROP DATABASE IF EXISTS ${mysql_project_db_name};"
+      tags:
+        - clean
+
+    - name: Temporarily move sites folder
+      command: mv ${project_root}/htdocs/sites/default sites.tmp
+      sudo: yes
+      tags:
+        - remake-core
+
+    - name: Build Core
+      shell: cd ${project_root}/htdocs && drush make ../etc/drupal-core.make --yes
+      tags:
+        - init
+        - remake-core
+
+    - name: Restore sites folder
+      shell: rm -r ${project_root}/htdocs/sites/default && mv sites.tmp ${project_root}/htdocs/sites/default
+      sudo: yes
+      tags:
+        - remake-core
+
+    - name: Symlink algebraix install profile.
+      action: command ln -s ../../src/ ${project_root}/htdocs/profiles/${project_name}
+      tags:
+        - init
+
+    - name: Create Project MySQL Database.
+      action: command mysql --user=${mysql_root_user} --password=${mysql_root_password} -h localhost -e "CREATE DATABASE IF NOT EXISTS ${mysql_project_db_name}; GRANT ALL ON ${mysql_project_db_name}.* TO ${mysql_project_username}@'localhost' IDENTIFIED BY '${mysql_project_password}';"
+      tags:
+        - init
+
+    - name: Build Profile
+      shell: cd ${project_root}/src && drush make ${project_name}.make --no-core --force-complete --no-gitinfofile --contrib-destination=. --yes
+      tags:
+        - init
+        - remake-profile
+
+    - name: Site Install
+      command: drush --root=${project_root}/htdocs si ${project_name} --db-su=${mysql_root_user} --db-su-pw=${mysql_root_password} --db-url="mysql://${mysql_project_username}:${mysql_project_password}@localhost/${mysql_project_db_name}" --yes
+      tags:
+        - init
+        - install
+
+    - name: Default Files Group Permissions
+      action: command chgrp -R ${project_files_group_owner} ${project_root}/htdocs/files/
+      tags:
+        - files
+
+    - name: Replace htaccess with correct version
+      action: template src=files/htaccess dest=${project_root}/htdocs/.htaccess
+      tags:
+        - init
+        - remake-core
